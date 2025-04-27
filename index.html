@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maze Game 🦷🏥⭐</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f0f8ff;
+    }
+    .game-container {
+      display: inline-block;
+      margin-top: 20px;
+      position: relative;
+      transition: opacity 0.5s;
+    }
+    #maze {
+      display: grid;
+      grid-template-columns: repeat(7, 50px);
+      grid-template-rows: repeat(7, 50px);
+      gap: 2px;
+      margin-bottom: 10px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      background: #fff;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .wall {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .player {
+      background: #e0ffff;
+      font-weight: bold;
+      animation: pop 0.3s ease;
+    }
+    .goal {
+      background: #98fb98;
+      font-weight: bold;
+    }
+    .checkpoint {
+      background: transparent;
+    }
+    #hint {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.5s ease;
+    }
+    #popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 90%;
+      transform: scale(0.8);
+      animation: scaleIn 0.5s forwards;
+    }
+    #progress {
+      width: 80%;
+      height: 20px;
+      background: #ddd;
+      margin: 10px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #00bfff;
+      transition: width 0.3s;
+    }
+    #timer {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+    #close-popup {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #00bfff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #next-game-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #32cd32;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #motivational-text {
+      margin-top: 15px;
+      font-size: 20px;
+      color: #333;
+      font-style: italic;
+    }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @keyframes scaleIn {
+      to {transform: scale(1);}
+    }
+  </style>
+</head>
+<body>
+
+<h1>Maze Challenge 🦷🏥⭐</h1>
+
+<div id="progress">
+  <div id="progress-bar"></div>
+</div>
+
+<div id="timer">Waktu: 0 detik</div>
+
+<div class="game-container">
+  <div id="maze"></div>
+  <div id="hint">Bantu 🦷 mencapai 🏥 dengan melewati 3 checkpoint (⭐)!</div>
+</div>
+
+<div id="popup">
+  <div id="popup-content">
+    <h2>Selamat! 🎉</h2>
+    <p id="finish-time"></p>
+    <p id="motivational-text">Senyummu hari ini adalah awal dari senyuman banyak orang di masa depan.<br>Terus semangat, calon perawat gigi terbaik! 🦷💙</p>
+    <button id="close-popup">Main Lagi</button>
+    <button id="next-game-btn" style="display:none;">Lanjut ke Game Berikutnya</button>
+  </div>
+</div>
+
+<!-- Sound effects -->
+<audio id="checkpoint-sound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+<audio id="finish-sound" src="https://www.soundjay.com/misc/sounds/bell-ringing-01.mp3"></audio>
+<audio id="wall-sound" src="https://www.soundjay.com/button/sounds/beep-10.mp3"></audio>
+
+<script>
+const mazeLayoutInitial = [
+  [1, 1, 1, 1, 1, 1, 1],
+  [1, 'P', 0, 1, 0, 'C', 1],
+  [1, 0, 1, 1, 0, 1, 1],
+  [1, 0, 'C', 0, 0, 0, 1],
+  [1, 1, 1, 0, 1, 0, 1],
+  [1, 0, 'C', 0, 1, 'G', 1],
+  [1, 1, 1, 1, 1, 1, 1]
+];
+
+let mazeLayout = JSON.parse(JSON.stringify(mazeLayoutInitial));  // Clone the initial maze
+let playerPos = { x: 1, y: 1 };
+let checkpointsPassed = {
+  '3-2': false,
+  '1-5': false,
+  '5-2': false
+};
+let startTime = null;
+let timerInterval = null;
+
+const mazeElement = document.getElementById('maze');
+const hintElement = document.getElementById('hint');
+const popup = document.getElementById('popup');
+const progressBar = document.getElementById('progress-bar');
+const timerElement = document.getElementById('timer');
+const checkpointSound = document.getElementById('checkpoint-sound');
+const finishSound = document.getElementById('finish-sound');
+const wallSound = document.getElementById('wall-sound');
+
+function renderMaze() {
+  mazeElement.innerHTML = '';
+
+  for (let y = 0; y < 7; y++) {
+    for (let x = 0; x < 7; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      if (mazeLayout[y][x] === 1) {
+        cell.classList.add('wall');
+        cell.addEventListener('click', () => wallSound.play());
+      } else if (mazeLayout[y][x] === 'P') {
+        cell.classList.add('player');
+        cell.textContent = '🦷';
+      } else if (mazeLayout[y][x] === 'G') {
+        cell.classList.add('goal');
+        cell.textContent = '🏥';
+      } else if (mazeLayout[y][x] === 'C') {
+        cell.classList.add('checkpoint');
+        cell.textContent = '⭐';
+      }
+
+      if (mazeLayout[y][x] !== 1) {
+        cell.addEventListener('click', () => movePlayer(x, y));
+      }
+
+      mazeElement.appendChild(cell);
+    }
+  }
+}
+
+function movePlayer(x, y) {
+  const dx = Math.abs(x - playerPos.x);
+  const dy = Math.abs(y - playerPos.y);
+
+  if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+    if (!startTime) {
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    if (mazeLayout[y][x] === 'G') {
+      const allPassed = Object.values(checkpointsPassed).every(passed => passed);
+      if (!allPassed) {
+        hintElement.innerHTML = "⚠️ <span style='color:red'>Harus lewati semua ⭐ dulu!</span>";
+        return;
+      }
+    }
+
+    mazeLayout[playerPos.y][playerPos.x] = 0;
+
+    if (mazeLayout[y][x] === 'C') {
+      const key = `${y}-${x}`;
+      if (!checkpointsPassed[key]) {
+        checkpointsPassed[key] = true;
+        checkpointSound.play();
+        updateProgress();
+      }
+      mazeLayout[y][x] = 0;
+    }
+
+    mazeLayout[y][x] = 'P';
+    playerPos = { x, y };
+    renderMaze();
+
+    if (x === 5 && y === 5) {
+      clearInterval(timerInterval);
+      setTimeout(() => {
+        finishSound.play();
+        popup.style.display = 'flex';
+        document.querySelector('.game-container').style.opacity = '0.5';
+        const finishSeconds = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('finish-time').innerHTML = `Kamu menyelesaikan dalam ${finishSeconds} detik dengan semua ⭐ dilewati!`;
+
+        // Menampilkan tombol untuk melanjutkan ke game berikutnya
+        document.getElementById('next-game-btn').style.display = 'inline-block';
+      }, 500);
+    }
+  }
+}
+
+function updateProgress() {
+  const totalCheckpoints = Object.keys(checkpointsPassed).length;
+  const passedCheckpoints = Object.values(checkpointsPassed).filter(passed => passed).length;
+  progressBar.style.width = `${(passedCheckpoints / totalCheckpoints) * 100}%`;
+}
+
+function updateTimer() {
+  const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+  timerElement.innerHTML = `Waktu: ${elapsedTime} detik`;
+}
+
+document.getElementById('close-popup').addEventListener('click', () => {
+  location.reload();
+});
+
+document.getElementById('next-game-btn').addEventListener('click', () => {
+  window.location.href = 'tebak-gambar.html';  // Ganti dengan nama file game kedua
+});
+
+// Mulai game
+renderMaze();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Kedua - Tebak Alat Kesehatan Gigi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .game-container {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 80%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .image-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .answer-buttons button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .answer-buttons button:hover {
+      background-color: #0056b3;
+    }
+    /* Popup Design */
+    #popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 300px;
+      z-index: 999;
+      animation: popupAnimation 1s ease-out;
+    }
+
+    @keyframes popupAnimation {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    #popup-message {
+      font-size: 22px; /* Memperbesar font */
+      font-weight: bold;
+      color: #000000;
+      text-align: center;
+    }
+    #motivational-message {
+      font-size: 18px;
+      font-style: italic;
+      color: #000000;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #popup button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #popup button:hover {
+      background-color: #218838;
+    }
+
+    /* Overlay untuk meredupkan layar game */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 998;
+      display: none;
+    }
+
+    /* Surat Animasi */
+    #end-letter {
+      display: none;
+      font-size: 20px;
+      font-weight: bold;
+      color: #007bff;
+      cursor: pointer;
+      margin-top: 20px;
+      animation: letterAnimation 1s ease-out;
+    }
+
+    @keyframes letterAnimation {
+      0% { opacity: 0; transform: translateY(50px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Popup untuk Surat Penghargaan */
+    #reward-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 300px;
+      z-index: 999;
+      animation: popupAnimation 1s ease-out;
+    }
+    #reward-popup button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #ff5733;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #reward-popup button:hover {
+      background-color: #e74a33;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Game Tebak Alat Kesehatan Gigi 🦷</h1>
+
+<div class="game-container">
+  <div class="image-container">
+    <img id="image" src="" alt="Gambar Alat Kesehatan Gigi">
+  </div>
+
+  <div class="answer-buttons">
+    <button id="answer1">Jawaban 1</button>
+    <button id="answer2">Jawaban 2</button>
+    <button id="answer3">Jawaban 3</button>
+    <button id="answer4">Jawaban 4</button>
+  </div>
+</div>
+
+<!-- Overlay untuk meredupkan layar di belakang popup -->
+<div id="overlay"></div>
+
+<!-- Popup untuk jawaban benar/salah -->
+<div id="popup">
+  <p id="popup-message"></p>
+  <p id="motivational-message"></p>
+  <button id="next-question-btn" style="display: none;" onclick="nextQuestion()">Lanjut ke Soal Berikutnya</button>
+  <button id="show-end-letter" style="display:none" onclick="showRewardPopup()">Klik di sini untuk melihat Surat Penghargaan 🎉</button>
+</div>
+
+<!-- Surat yang muncul setelah permainan selesai -->
+<div id="end-letter" style="display:none; font-size: 22px; color: #007bff; text-align: center; margin-top: 20px;">
+  Selamat! Kamu telah selesai dengan semua soal! Teruskan usaha dan semangatmu untuk menjadi profesional di bidang kesehatan gigi! 🎉
+</div>
+
+<!-- Popup untuk surat penghargaan -->
+<div id="reward-popup">
+  <p>Selamat! Kamu telah menyelesaikan semua soal! Teruskan usaha dan semangatmu untuk menjadi profesional di bidang kesehatan gigi! 🎉</p>
+  <p style="font-size: 18px; color: #007bff;">Tutup tab atau jendela ini untuk keluar dari game.</p>
+</div>
+
+
+<script>
+// Pertanyaan game
+const questions = [
+  {
+    image: 'https://tse1.mm.bing.net/th?id=OIP.R50DfGYFIQU8BJLzFwcR1AHaHE&pid=Api&P=0&h=180',
+    answers: ['Sikat Gigi', 'Pasta Gigi', 'Sonde', 'Kawat Gigi'],
+    correctAnswer: 2, // Jawaban yang benar adalah sonde
+    message: 'Hebat! Ketekunanmu akan membawamu jauh. Teruskan perjuanganmu, kamu pasti bisa mencapai impianmu sebagai perawat gigi! 💪'
+  },
+  {
+    image: 'https://tse2.mm.bing.net/th?id=OIP.FEcaPz9FCnITvxvurZCPogHaDt&pid=Api&P=0&h=180',
+    answers: ['Obat Kumur', 'Scaler', 'Plak Remover', 'Kawat Gigi'],
+    correctAnswer: 1, // Jawaban yang benar adalah scaler
+    message: 'Luar biasa! Setiap usaha yang kamu lakukan akan membawa kamu lebih dekat ke impianmu. Semangat! 🌟'
+  },
+  {
+    image: 'https://tse4.mm.bing.net/th?id=OIP.HdTab1hKwpHHH-HZWWRqEAHaDt&pid=Api&P=0&h=180',
+    answers: ['Sikat Gigi', 'Pasta Gigi', 'Ekscavator', 'Peralatan Operasi'],
+    correctAnswer: 2, // Jawaban yang benar adalah fluoride
+    message: 'Senyumanmu adalah cahaya yang akan membawa kesehatan gigi ke dunia ini. Aku yakin, dengan dedikasimu, kamu akan mencapai segala impianmu. Kamu luar biasa! 🌟'
+  }
+];
+
+let currentQuestion = 0;
+let isGameOver = false; // Flag untuk memeriksa apakah permainan sudah selesai
+
+// Fungsi untuk memulai permainan
+function startGame() {
+  showQuestion(currentQuestion);
+}
+
+// Menampilkan soal dan jawaban
+function showQuestion(index) {
+  const question = questions[index];
+  document.getElementById('image').src = question.image;
+  document.getElementById('answer1').textContent = question.answers[0];
+  document.getElementById('answer2').textContent = question.answers[1];
+  document.getElementById('answer3').textContent = question.answers[2];
+  document.getElementById('answer4').textContent = question.answers[3];
+
+  // Menampilkan popup jika jawaban dipilih
+  document.querySelectorAll('.answer-buttons button').forEach((button, i) => {
+    button.onclick = function () {
+      checkAnswer(i, question.correctAnswer, question.message);
+    };
+  });
+}
+
+// Fungsi untuk mengecek jawaban
+function checkAnswer(selectedAnswer, correctAnswer, message) {
+  const popup = document.getElementById('popup');
+  const overlay = document.getElementById('overlay');
+  const motivationalMessage = document.getElementById('motivational-message');
+  const showEndLetterButton = document.getElementById('show-end-letter');
+  const nextQuestionButton = document.getElementById('next-question-btn');
+
+  if (selectedAnswer === correctAnswer) {
+    document.getElementById('popup-message').textContent = 'Jawaban Benar!';
+  } else {
+    document.getElementById('popup-message').textContent = 'Jawaban Salah. Coba Lagi!';
+  }
+
+  motivationalMessage.textContent = message;
+
+  popup.style.display = 'block';
+  overlay.style.display = 'block';
+
+  // Menampilkan tombol lanjutan atau tombol untuk melihat surat penghargaan
+  if (currentQuestion === questions.length - 1) {
+    showEndLetterButton.style.display = 'block';
+    nextQuestionButton.style.display = 'none';
+  } else {
+    nextQuestionButton.style.display = 'block';
+    showEndLetterButton.style.display = 'none';
+  }
+}
+
+// Fungsi untuk melanjutkan ke soal berikutnya
+function nextQuestion() {
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    showQuestion(currentQuestion);
+    document.getElementById('popup').style.display = 'none'; // Menutup popup soal
+    document.getElementById('overlay').style.display = 'none'; // Menutup overlay
+  }
+}
+
+// Fungsi untuk menampilkan surat penghargaan
+function showRewardPopup() {
+  document.getElementById('reward-popup').style.display = 'block';
+  document.getElementById('popup').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+}
+
+// Fungsi untuk keluar dari game
+function exitGame() {
+  window.close(); // Menutup tab atau window
+}
+
+// Memulai game
+startGame();
+</script>
+
+</body>
+</html>
